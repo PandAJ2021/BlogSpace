@@ -18,7 +18,7 @@ class UserAdmin(BaseUserAdmin):
     )
 
     add_fieldsets = (
-        (None, {'fields':('phone', 'email', 'username', 'password', 'is_admin', 'is_active')})
+        (None, {'fields':('phone', 'email', 'username', 'password', 'is_admin', 'is_active')}),
         )
         
 admin.site.unregister(Group)
