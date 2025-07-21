@@ -28,3 +28,33 @@ class User(AbstractBaseUser):
     def is_staff(self):
         return self.is_admin
     
+
+class SocialLink(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='social_links')
+    label = models.CharField(max_length=55)
+    link = models.URLField()
+
+    def __str__(self):
+        return f'{self.label} : {self.url}'
+
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    name = models.CharField(verbose_name='First Name', max_length=55, null=True, blank=True)
+    surname = models.CharField(verbose_name='Last Name', max_length=55, null=True, blank=True)
+    picture = models.ImageField(verbose_name='Profile Picture', upload_to='accounts', null=True, blank=True)
+    bio = models.TextField(verbose_name='Biography', null=True, blank=True)
+    birth_date = models.DateField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    gender = models.CharField(choices=[
+        ('male','male'),
+        ('female','female'),
+        ('other','other')],
+        null= True, blank=True)
+    
+    @property
+    def get_social_links(self):
+        return self.user.social_links.all()
+    
+    def __str__(self):
+        return f'{self.name} {self.surname}'
