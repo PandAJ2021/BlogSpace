@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User
+from .models import User, UserProfile, SocialLink
 from rest_framework.validators import UniqueValidator
 import re
 
@@ -53,4 +53,33 @@ class AdminUserSerializer(serializers.ModelSerializer):
     def validate_phone(self, value):
         if not re.fullmatch('09\d{9}', value):
             raise serializers.ValidationError('Enter a valid 11-dgigit phone number')
+        return value
+
+
+class SocialLinkSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SocialLink
+        fields = ['label', 'link']
+
+    def validate(self, attrs):
+        user = self.context('request').user
+        if SocialLink.objects.filter(user=user) > 10:
+            raise serializers.ValidationError('Max 10 social links allowed')
+        return attrs
+    
+class UserProfileSerializer(serializers.ModelSerializer):
+    social_links = SocialLinkSerializer(source='user.social_links', many=True)
+    
+    class Meta:
+        model = UserProfile
+        fields = ['name', 'surname', 'picture', 'bio', 'birth_date', 'created_at', 'gender', 'social_links']
+
+    def validate_name(self, value):
+        if not value:
+            raise serializers.ValidationError('First name is required')
+        return value
+    
+    def validate_surname(self, value):
+        if not value:
+            raise serializers.ValidationError('Last name is required')
         return value
