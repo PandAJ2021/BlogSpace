@@ -4,7 +4,9 @@ from rest_framework.routers import SimpleRouter
 
 
 router = SimpleRouter()
-router.register(r'admin', views.AdminUserViewSet)
+router.register(r'admin', views.AdminUserViewSet, basename='admin')
+router.register(r'profiles', views.ListProfileView, basename='profiles')
+router.register(r'profile', views.UserProfileView, basename='profile')
 
 app_name = 'accounts'
 urlpatterns =[
