@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, UserProfile, SocialLink
+from .models import User, UserProfile, SocialLink, OTPCode
 from rest_framework.validators import UniqueValidator
 import re
 
@@ -83,4 +83,15 @@ class UserProfileSerializer(serializers.ModelSerializer):
     def validate_surname(self, value):
         if not value:
             raise serializers.ValidationError('Last name is required')
+        return value
+
+
+class OTPLoginSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OTPCode
+        fields = ['phone', 'code']
+
+    def validate_phone(self, value):
+        if not re.fullmatch('09\d{9}', value):
+            raise serializers.ValidationError('Enter a valid 11-dgigit phone number')
         return value
