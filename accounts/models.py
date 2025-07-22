@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser
 from .managers import UserManager
+from django.utils import timezone
+from datetime import timedelta
 
 
 class User(AbstractBaseUser):
@@ -58,3 +60,16 @@ class UserProfile(models.Model):
     
     def __str__(self):
         return f'{self.name} {self.surname}'
+
+
+class OTPCode(models.Model):
+    phone = models.CharField(verbose_name='Phone Number', max_length=11)
+    code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.code} sent to {self.phone}'
+    
+    @property
+    def is_expired(self):
+        return timezone.now() > self.created_at + timedelta(minutes=3)
