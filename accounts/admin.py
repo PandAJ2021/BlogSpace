@@ -19,7 +19,7 @@ class UserAdmin(BaseUserAdmin):
     )
 
     add_fieldsets = (
-        (None, {'fields':('phone', 'email', 'username', 'password', 'is_admin', 'is_active')}),
+        (None, {'fields':('phone', 'email', 'username', 'password', 'is_admin', 'is_active',)}),
         )
     
 
@@ -32,7 +32,7 @@ class OTPCodeAdmin(admin.ModelAdmin):
 class UserProfileAdmin(admin.ModelAdmin):
     ordering = ('-created_at',)
     list_display = ('user', 'name', 'surname',)
-    search_fields = ('name', 'surname')
+    search_fields = ('name', 'surname',)
 
 
 admin.site.unregister(Group)
