@@ -6,10 +6,11 @@ class PublicPostSerializer(serializers.ModelSerializer):
     author  = serializers.ReadOnlyField(source='author.username')
     category = serializers.SlugRelatedField(read_only=True, slug_field='name')
     tags = serializers.SlugRelatedField(read_only=True, slug_field='name', many=True)
+    likes_count = serializers.ReadOnlyField()
 
     class Meta:
         model = Post
-        fields = ['author', 'title', 'slug', 'content', 'image', 'category', 'tags', 'updated_at']
+        fields = ['author', 'title', 'slug', 'content', 'image', 'category', 'tags', 'updated_at', 'likes_count']
         extra_kwargs = {
             'slug':{'read_only':True},
         }
@@ -19,10 +20,11 @@ class UserPostSerilaizer(serializers.ModelSerializer):
     author  = serializers.ReadOnlyField(source='author.username')
     category = serializers.SlugRelatedField(read_only=True, slug_field='name')
     tags = serializers.SlugRelatedField(read_only=True, slug_field='name', many=True)
+    likes_count = serializers.ReadOnlyField()
 
     class Meta:
         model = Post
-        fields = ['author', 'title', 'slug', 'content', 'image', 'category', 'tags', 'updated_at', 'created_at', 'is_published']
+        fields = ['author', 'title', 'slug', 'content', 'image', 'category', 'tags', 'updated_at', 'created_at', 'is_published', 'likes_count']
         extra_kwargs = {
             'updated_at':{'read_only':True},
             'created_at':{'read_only':True},
@@ -38,3 +40,18 @@ class UserPostSerilaizer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance    
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    post = serializers.SlugRelatedField(read_only=True, slug_field='title')
+    user = serializers.SlugRelatedField(read_only=True, slug_field='username')
+    comments = serializers.SerializerMethodField(read_only=True)
+    likes_count = serializers.ReadOnlyField()
+
+    class Meta:
+        model = Comment
+        fields = ['post', 'user', 'content', 'created_at', 'comments', 'is_approved', 'likes_count']
+
+    def get_comments(self, obj):
+       children = obj.comments.filter(is_approved=True)
+       return CommentSerializer(children, many=True).data
