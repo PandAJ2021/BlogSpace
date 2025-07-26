@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Post, Comment, Category, Tag
+from .models import Post, Comment, Category, Tag, PostLike, CommentLike
 
 
 @admin.register(Post)
@@ -28,3 +28,7 @@ class CategoryAdmin(admin.ModelAdmin):
 class TagAdmin(admin.ModelAdmin):
     list_display = ('name',)
     search_fields = ('name',)
+
+
+admin.site.register(PostLike)
+admin.site.register(CommentLike)
