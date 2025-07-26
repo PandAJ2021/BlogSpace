@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Post, Comment, Category, Tag
+from .models import Post, Comment, PostLike, CommentLike
 
 
 class PublicPostSerializer(serializers.ModelSerializer):
@@ -55,3 +55,28 @@ class CommentSerializer(serializers.ModelSerializer):
     def get_comments(self, obj):
        children = obj.comments.filter(is_approved=True)
        return CommentSerializer(children, many=True).data
+
+
+class PostLikeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = PostLike
+        fields = ['user', 'post', 'created_at']
+        extra_kwargs = {  
+            'user':{'write_only':True},
+            'post':{'write_only':True},
+            'created_at':{'read_only':True},
+        }
+
+
+class CommentLikeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = CommentLike
+        fields = ['id', 'user', 'comment', 'created_at']
+        extra_kwargs = {  
+            'user':{'write_only':True},
+            'comment':{'write_only':True},
+            'created_at':{'read_only':True},
+            'id':{'read_only':True},
+        }
