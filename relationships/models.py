@@ -1,7 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
-from dateutil import relativedelta
+from dateutil.relativedelta import relativedelta
 
 
 class Follow(models.Model):
