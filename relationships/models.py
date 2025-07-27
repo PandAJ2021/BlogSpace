@@ -15,7 +15,7 @@ class Follow(models.Model):
         ]
 
     def __str__(self):
-        return f'{self.follower} followed {self.following}'
+        return f'{self.follower} follow {self.author}'
 
 
 class Subscribe(models.Model):
