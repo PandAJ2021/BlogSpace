@@ -5,9 +5,9 @@ from .models import Post, Comment, Category, Tag, PostLike, CommentLike
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
     ordering = ('-updated_at',)
-    list_display = ('author', 'title', 'category', 'is_published', 'updated_at',)
+    list_display = ('author', 'title', 'category', 'is_published', 'is_premium', 'updated_at',)
     search_fields = ('author__username', 'category__name', 'tags__name',)
-    list_filter = ('is_published',)
+    list_filter = ('is_published', 'is_premium',)
 
 
 @admin.register(Comment)
