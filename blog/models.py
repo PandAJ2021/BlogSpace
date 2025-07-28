@@ -13,6 +13,7 @@ class Post(models.Model):
     category = models.ForeignKey('Category', on_delete=models.SET_NULL, null=True, related_name='posts')
     tags = models.ManyToManyField('Tag', blank=True, related_name='posts')
     is_published = models.BooleanField(default=False)
+    is_premium = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
