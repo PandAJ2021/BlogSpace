@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import Post, Comment, PostLike, CommentLike
 
 
-class PublicPostSerializer(serializers.ModelSerializer):
+class ReadOnlyPostSerializer(serializers.ModelSerializer):
     author  = serializers.ReadOnlyField(source='author.username')
     category = serializers.SlugRelatedField(read_only=True, slug_field='name')
     tags = serializers.SlugRelatedField(read_only=True, slug_field='name', many=True)
@@ -11,27 +11,18 @@ class PublicPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
         fields = ['author', 'title', 'slug', 'content', 'image', 'category', 'tags', 'updated_at', 'likes_count']
-        extra_kwargs = {
-            'slug':{'read_only':True},
-        }
+        read_only_fields = ['slug', 'likes_count']
 
 
 class UserPostSerilaizer(serializers.ModelSerializer):
     author  = serializers.ReadOnlyField(source='author.username')
     category = serializers.SlugRelatedField(read_only=True, slug_field='name')
     tags = serializers.SlugRelatedField(read_only=True, slug_field='name', many=True)
-    likes_count = serializers.ReadOnlyField()
 
     class Meta:
         model = Post
-        fields = ['author', 'title', 'slug', 'content', 'image', 'category', 'tags', 'updated_at', 'created_at', 'is_published', 'likes_count']
-        extra_kwargs = {
-            'updated_at':{'read_only':True},
-            'created_at':{'read_only':True},
-            'is_published':{'read_only':True},
-            'author':{'read_only':True},
-            'slug':{'read_only':True},
-        }
+        fields = '__all__'
+        read_only_fields = ['author', 'slug', 'updated_at', 'created_at', 'is_published', 'likes_count']
 
     def update(self, instance, validated_data):
         if 'title' in validated_data:
