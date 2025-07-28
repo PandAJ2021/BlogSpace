@@ -1,7 +1,7 @@
 from rest_framework.generics import ListAPIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from .models import Post, Comment, PostLike, CommentLike
-from .serializers import PublicPostSerializer, UserPostSerilaizer, CommentSerializer, PostLikeSerializer, CommentLikeSerializer
+from .serializers import ReadOnlyPostSerializer, UserPostSerilaizer, CommentSerializer, PostLikeSerializer, CommentLikeSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
@@ -11,13 +11,23 @@ from rest_framework.response import Response
 from rest_framework import status
 
 
-class ReadOnlyPostView(ReadOnlyModelViewSet):
-    serializer_class = PublicPostSerializer
+class ReadOnlyPublicPostView(ReadOnlyModelViewSet):
+    serializer_class = ReadOnlyPostSerializer
     lookup_field = 'slug'
 
     def get_queryset(self):
-        return Post.objects.filter(is_published=True)
+        return Post.objects.filter(is_published=True, is_premium=False)
 
+
+class ReadOnlyPremiumPostView(ReadOnlyModelViewSet):
+    serializer_class = ReadOnlyPostSerializer
+    permission_classes = [IsAuthenticated,]
+    lookup_field = 'slug'
+
+    def get_queryset(self):
+        authors = self.request.user.subscriptions.values_list('author', flat=True)
+        return Post.objects.filter(is_published=True, is_premium=True, author__in=authors)
+    
 
 class UserPostView(ModelViewSet):
     serializer_class = UserPostSerilaizer
