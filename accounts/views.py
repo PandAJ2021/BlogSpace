@@ -60,7 +60,7 @@ class SocialLinkViewSet(ModelViewSet):
         serializer.save(user=self.request.user)
 
 
-class ListProfileView(ListModelMixin, RetrieveModelMixin, GenericViewSet):
+class ListRetrieveProfileView(ListModelMixin, RetrieveModelMixin, GenericViewSet):
     serializer_class = UserProfileSerializer
     queryset = UserProfile.objects.all()
 
