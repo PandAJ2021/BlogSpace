@@ -37,7 +37,7 @@ class SocialLink(models.Model):
     link = models.URLField()
 
     def __str__(self):
-        return f'{self.label} : {self.url}'
+        return f'{self.label} : {self.link}'
 
 
 class UserProfile(models.Model):
