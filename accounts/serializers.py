@@ -61,12 +61,6 @@ class SocialLinkSerializer(serializers.ModelSerializer):
         model = SocialLink
         fields = ['label', 'link']
 
-    def validate(self, attrs):
-        user = self.context('request').user
-        if SocialLink.objects.filter(user=user) > 10:
-            raise serializers.ValidationError('Max 10 social links allowed')
-        return attrs
-
 
 class UserProfileSerializer(serializers.ModelSerializer):
     social_links = SocialLinkSerializer(source='user.social_links', many=True, read_only=True)
