@@ -1,6 +1,6 @@
 from django.test import TestCase
-from accounts.models import User
-from accounts.serializers import UserRegisterSerializer, AdminUserSerializer
+from accounts.models import User, SocialLink
+from accounts.serializers import UserRegisterSerializer, AdminUserSerializer, SocialLinkSerializer
 
 
 class UserRegisterSerializerTests(TestCase):
@@ -139,3 +139,26 @@ class AdminUserSerializerTests(TestCase):
         serializer = AdminUserSerializer(data=data, instance=self.user, partial=True)
         self.assertFalse(serializer.is_valid())
         self.assertIn("email", serializer.errors)
+
+
+class SocialLinkSerializerTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            phone="09987654321",
+            email="newtest@gmail.com",
+            username="testuser",
+            password="testpassword"
+        )
+
+    def test_serializer_valid_data(self):
+        data = {
+            "label":"GitHub",
+            "link":"https://github.com/example"
+        }
+        serializer = SocialLinkSerializer(data=data)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+        obj = serializer.save(user=self.user)
+        self.assertIsInstance(obj, SocialLink)
+        self.assertEqual(obj.label, "GitHub")
+        self.assertEqual(obj.link, "https://github.com/example")
