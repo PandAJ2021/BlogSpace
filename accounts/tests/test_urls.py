@@ -47,3 +47,10 @@ class TestAccountsURLs(SimpleTestCase):
         url = reverse('accounts:profile-me')
         self.assertEqual(resolve(url).func.cls, views.UserProfileView)
 
+    def test_social_link_router_resolves(self):
+        url = reverse('accounts:social-link-list')
+        self.assertEqual(resolve(url).func.cls, views.SocialLinkViewSet)
+    
+    def test_social_link_router_detail_resolves(self):
+        url = reverse('accounts:social-link-detail', kwargs={'pk': 1})
+        self.assertEqual(resolve(url).func.cls, views.SocialLinkViewSet)
