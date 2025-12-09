@@ -1,6 +1,6 @@
 from django.test import TestCase
 from accounts.models import User, SocialLink, UserProfile
-from accounts.serializers import UserRegisterSerializer, AdminUserSerializer, SocialLinkSerializer, UserProfileSerializer
+from accounts.serializers import UserRegisterSerializer, AdminUserSerializer, SocialLinkSerializer, UserProfileSerializer, OTPLoginSerializer
 
 
 class UserRegisterSerializerTests(TestCase):
@@ -212,3 +212,16 @@ class UserProfileSerializerTests(TestCase):
         serializer = UserProfileSerializer(data=invalid_data, instance=self.profile, partial=True)
         self.assertFalse(serializer.is_valid())
         self.assertIn("Last name is required", serializer.errors['surname'])
+
+
+class OTPLoginSerializerTests(TestCase):
+    def setUp(self):
+        self.valid_data = {
+            "phone": "08987654321",
+            "code": "123456"
+        }
+
+    def test_invalid_phone(self):
+        serializer = OTPLoginSerializer(data=self.valid_data)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("Enter a valid 11-dgigit phone number", serializer.errors['phone'])
