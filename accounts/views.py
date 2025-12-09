@@ -7,7 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, serializers
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ValidationError
 from rest_framework.decorators import action
@@ -57,7 +57,12 @@ class SocialLinkViewSet(ModelViewSet):
         return SocialLink.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        user = self.request.user
+
+        if SocialLink.objects.filter(user=user).count() >= 10:
+            raise serializers.ValidationError({'detail': 'Max 10 social links allowed.'}, code=status.HTTP_403_FORBIDDEN)
+            
+        serializer.save(user=user)
 
 
 class ListRetrieveProfileView(ListModelMixin, RetrieveModelMixin, GenericViewSet):
