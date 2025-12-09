@@ -1,6 +1,6 @@
 from django.test import TestCase
-from accounts.models import User, SocialLink
-from accounts.serializers import UserRegisterSerializer, AdminUserSerializer, SocialLinkSerializer
+from accounts.models import User, SocialLink, UserProfile
+from accounts.serializers import UserRegisterSerializer, AdminUserSerializer, SocialLinkSerializer, UserProfileSerializer
 
 
 class UserRegisterSerializerTests(TestCase):
@@ -162,3 +162,53 @@ class SocialLinkSerializerTests(TestCase):
         self.assertIsInstance(obj, SocialLink)
         self.assertEqual(obj.label, "GitHub")
         self.assertEqual(obj.link, "https://github.com/example")
+
+
+class UserProfileSerializerTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            phone="09987654321",
+            email="newtest@gmail.com",
+            username="testuser",
+            password="testpassword"   
+        )
+        self.profile = UserProfile.objects.get(user=self.user)
+    
+    def test_valid_serializer(self):
+        valid_data = {
+            "name":"test_name",
+            "surname": "test_surname",
+            "bio": "Test bio",
+            "gender": "male"
+        }
+        serializer = UserProfileSerializer(data=valid_data, instance=self.profile, partial=True)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+        serializer.save()
+
+        data = serializer.data
+        self.assertEqual(data['name'], "test_name")
+        self.assertEqual(data['surname'], "test_surname")
+        self.assertEqual(data['bio'], "Test bio")
+        self.assertEqual(data['gender'], "male")
+        self.assertIn("social_links", data) # social_links should exist (empty list if none)
+
+    def test_missing_name_validation(self):
+        invalid_data = {
+            "surname": "test_surname",
+            "bio": "Test bio",
+            "gender": "male"
+        }
+        serializer = UserProfileSerializer(data=invalid_data, instance=self.profile, partial=True)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("First name is required", serializer.errors['name'])
+
+    def test_missing_surname_validation(self):
+        invalid_data = {
+            "name":"test_name",
+            "bio": "Test bio",
+            "gender": "male"
+        }
+        serializer = UserProfileSerializer(data=invalid_data, instance=self.profile, partial=True)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("Last name is required", serializer.errors['surname'])
