@@ -7,6 +7,7 @@ router = SimpleRouter()
 router.register(r'admin', views.AdminUserViewSet, basename='admin')
 router.register(r'profiles', views.ListRetrieveProfileView, basename='profiles')
 router.register(r'profile', views.UserProfileView, basename='profile')
+router.register(r'social-links', views.SocialLinkViewSet, basename='social-link')
 
 app_name = 'accounts'
 urlpatterns =[
