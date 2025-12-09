@@ -69,15 +69,15 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields = ['name', 'surname', 'picture', 'bio', 'birth_date', 'gender', 'social_links']
 
-    def validate_name(self, value):
-        if not value:
-            raise serializers.ValidationError('First name is required')
-        return value
-    
-    def validate_surname(self, value):
-        if not value:
-            raise serializers.ValidationError('Last name is required')
-        return value
+    def validate(self, attrs):
+        if self.instance:
+            name = attrs.get('name', self.instance.name)
+            surname = attrs.get('surname', self.instance.surname)
+            if not name:
+                raise serializers.ValidationError({'name': 'First name is required'})
+            if not surname:
+                raise serializers.ValidationError({'surname': 'Last name is required'})
+        return attrs
 
 
 class OTPLoginSerializer(serializers.ModelSerializer):
