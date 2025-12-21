@@ -1,7 +1,8 @@
 from django.test import TestCase
 from django.contrib.admin.sites import AdminSite
 from django.contrib.auth import get_user_model
-from accounts.admin import UserAdmin
+from accounts.admin import UserAdmin, OTPCodeAdmin
+from accounts.models import OTPCode
 
 User = get_user_model()
 
@@ -37,3 +38,20 @@ class UserAdminTest(TestCase):
         expected_fields = ('phone', 'email', 'username', 'password', 'is_admin', 'is_active')
         fields_in_admin = add_fieldsets[0][1]['fields']
         self.assertEqual(fields_in_admin, expected_fields)
+
+
+class OTPCodeAdminTest(TestCase):
+    
+    def setUp(self):
+        self.site = AdminSite()
+        self.admin = OTPCodeAdmin(OTPCode, self.site)
+
+    def test_admin_ordering(self):
+        self.assertEqual(self.admin.ordering, ('-created_at',))
+
+    def test_admin_list_display(self):
+        expected_display = ('phone', 'code', 'created_at', 'is_expired')
+        self.assertEqual(self.admin.list_display, expected_display)
+
+    def test_admin_search_fields(self):
+        self.assertEqual(self.admin.search_fields, ('phone',))
