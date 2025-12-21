@@ -1,8 +1,8 @@
 from django.test import TestCase
 from django.contrib.admin.sites import AdminSite
 from django.contrib.auth import get_user_model
-from accounts.admin import UserAdmin, OTPCodeAdmin
-from accounts.models import OTPCode
+from accounts.admin import UserAdmin, OTPCodeAdmin, UserProfileAdmin
+from accounts.models import OTPCode, UserProfile
 
 User = get_user_model()
 
@@ -41,7 +41,7 @@ class UserAdminTest(TestCase):
 
 
 class OTPCodeAdminTest(TestCase):
-    
+
     def setUp(self):
         self.site = AdminSite()
         self.admin = OTPCodeAdmin(OTPCode, self.site)
@@ -55,3 +55,35 @@ class OTPCodeAdminTest(TestCase):
 
     def test_admin_search_fields(self):
         self.assertEqual(self.admin.search_fields, ('phone',))
+
+
+class UserProfileAdminTest(TestCase):
+    def setUp(self):
+        self.site = AdminSite()
+        self.admin = UserProfileAdmin(UserProfile, self.site)
+        self.user = User.objects.create_user(
+            phone = "09123456789",
+            email = "test@gamil.com",
+            username = "testuser",
+            password = "passwordtest"
+        )
+        self.profile = UserProfile.objects.get(user=self.user)
+
+    def test_admin_ordering(self):
+        self.assertEqual(self.admin.ordering, ('-created_at',))
+
+    def test_admin_list_display(self):
+        expected_display = ('user', 'name', 'surname')
+        self.assertEqual(self.admin.list_display, expected_display)
+
+    def test_admin_search_fields(self):
+        expected_search = ('name', 'surname')
+        self.assertEqual(self.admin.search_fields, expected_search)
+
+    def test_user_link_resolution(self):
+        """
+        Since 'user' is a ForeignKey, this ensures the admin can 
+        access the related user string representation without crashing.
+        """
+        display_value = self.profile.user.__str__()
+        self.assertEqual(display_value, 'testuser')
