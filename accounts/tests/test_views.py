@@ -1,5 +1,5 @@
 from django.urls import reverse
-from accounts.models import User
+from accounts.models import User, SocialLink
 from rest_framework import status
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -154,4 +154,47 @@ class UserLogoutViewTests(APITestCase):
         response = self.client.post(self.url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+
+class SocialLinkViewSetTests(APITestCase):
+
+    def setUp(self):
+
+        self.user_a = User.objects.create_user(
+            phone="09987654321",
+            email="user_a@gmail.com",
+            username="testuser_a",
+            password="testpassword"
+        )
+        self.user_b = User.objects.create_user(
+            phone="09123456789",
+            email="user_b@gmail.com",
+            username="testuser_b",
+            password="testpassword"
+        )
+        self.list_url = reverse('accounts:social-link-list')
+        self.client.force_authenticate(user=self.user_a)
     
+    def test_get_queryset_only_returns_own_links(self):
+        SocialLink.objects.create(user=self.user_a, label="Github", link="github.com/user_a")
+        SocialLink.objects.create(user=self.user_b, label="Github", link="github.com/user_b")
+
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['link'], "github.com/user_a")
+
+    def test_max_limit_enforcement(self):
+        for i in range(10):
+            SocialLink.objects.create(user=self.user_a, label=f"Link {i}", link=f"https://link{i}.com")
+
+        data = {'label': '11th Link', 'link': 'https://link11.com'}
+        response = self.client.post(self.list_url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('Max 10 social links allowed.', str(response.data))
+        self.assertEqual(SocialLink.objects.filter(user=self.user_a).count(), 10)
+    
+    def test_unauthenticated_access_denied(self):
+        self.client.force_authenticate(user=None)
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
