@@ -3,7 +3,7 @@ from rest_framework.mixins import ListModelMixin, UpdateModelMixin, DestroyModel
 from .models import User, UserProfile, SocialLink, OTPCode
 from .serializers import UserRegisterSerializer, AdminUserSerializer, UserProfileSerializer, SocialLinkSerializer, OTPLoginSerializer
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -22,7 +22,7 @@ class UserRegisterView(CreateAPIView):
 
 class AdminUserViewSet(ModelViewSet):
     queryset = User.objects.all()
-    permission_classes = [IsAuthenticated,]
+    permission_classes = [IsAdminUser,]
     serializer_class = AdminUserSerializer
 
     def perform_destroy(self, instance):
