@@ -40,3 +40,67 @@ class UserRegisterViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(User.objects.count(), 0)
 
+
+class AdminUserViewSetTest(APITestCase):
+
+    def setUp(self):
+        self.admin_user = User.objects.create_superuser(
+            username='admin_staff', 
+            email='admin@gmail.com', 
+            password='testpassword',
+            phone='09123456789'
+        )
+        
+        self.regular_user = User.objects.create_user(
+            username='regular_user', 
+            email='regular@gmail.com', 
+            password='testpassword',
+            phone='09987654321'
+        )
+
+        self.list_url = reverse('accounts:admin-list')
+        self.detail_url = reverse('accounts:admin-detail', kwargs={'pk': self.regular_user.pk})
+
+    def test_list_users_as_admin_allowed(self):
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+    
+    def test_list_users_as_regular_user_forbidden(self):
+        self.client.force_authenticate(user=self.regular_user)
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_list_users_anonymous_unauthorized(self):
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_update_user_by_admin(self):
+        self.client.force_authenticate(user=self.admin_user)
+        data = {'username': 'updated_name', 'phone': '09100000000'}
+        response = self.client.patch(self.detail_url, data, format='json')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.regular_user.refresh_from_db()
+        self.assertEqual(self.regular_user.username, 'updated_name')
+
+    def test_soft_delete_execution(self):
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.delete(self.detail_url)
+        
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        
+        self.regular_user.refresh_from_db()
+        self.assertFalse(self.regular_user.is_active, "User should be deactivated")
+        # user record should exist
+        self.assertTrue(User.objects.filter(pk=self.regular_user.pk).exists())
+
+    def test_update_user_as_regular_user_forbidden(self):
+        self.client.force_authenticate(user=self.regular_user)
+        data = {'username': 'updated_name', 'phone': '09100000000'}
+        
+        response = self.client.patch(self.detail_url, data, format='json')
+        
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.regular_user.refresh_from_db()
+        self.assertEqual(self.regular_user.username, 'regular_user')
