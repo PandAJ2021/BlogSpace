@@ -200,7 +200,7 @@ class SocialLinkViewSetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-class ProfileViewSetTests(APITestCase):
+class ListRetrieveProfileView(APITestCase):
 
     def setUp(self):
 
@@ -244,3 +244,69 @@ class ProfileViewSetTests(APITestCase):
         response = self.client.get(invalid_url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
+
+class UserProfileViewTests(APITestCase):
+
+    def setUp(self):
+
+        self.user = User.objects.create_user(
+            username='testuser', 
+            email='testuser@gmail.com', 
+            password='testpassword',
+            phone='09123456789'
+        )
+        self.other_user = User.objects.create_user(
+            username='otheruser', 
+            email='testotheruser@gmail.com', 
+            password='testpassword',
+            phone='09987654321'
+        )
+
+        self.profile = UserProfile.objects.get(user=self.user)
+        self.profile.name = 'Ali'
+        self.profile.surname = 'Jalili'
+        self.profile.save()
+
+        self.other_profile = UserProfile.objects.get(user=self.other_user)
+
+        self.me_url = reverse('accounts:profile-me') 
+        self.detail_url = reverse('accounts:profile-detail', kwargs={'pk': self.profile.pk})
+
+        self.client.force_authenticate(user=self.user)
+
+    def test_get_my_profile_success(self):
+        response = self.client.get(self.me_url)
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['name'], "Ali")
+        self.assertEqual(response.data['bio'], self.profile.bio)
+    
+    def test_update_my_profile_success(self):
+        data = {
+            'name': 'UpdatedName',
+            'surname': 'UpdatedSurname',
+            'bio': 'New Bio'
+        }
+        response = self.client.patch(self.detail_url, data)
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.profile.refresh_from_db()
+        self.assertEqual(self.profile.name, 'UpdatedName')
+    
+    def test_delete_my_profile_success(self):
+        response = self.client.delete(self.detail_url)
+        
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(UserProfile.objects.filter(pk=self.profile.pk).exists())
+
+    def test_cannot_delete_others_profile(self):        
+        other_url = reverse('accounts:profile-detail', kwargs={'pk': self.other_profile.pk})
+        response = self.client.delete(other_url)
+        
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_cannot_update_others_profile(self):
+        other_url = reverse('accounts:profile-detail', kwargs={'pk': self.other_profile.pk})
+        response = self.client.patch(other_url, {'name': 'Ali'})
+        
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
