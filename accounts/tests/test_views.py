@@ -2,6 +2,7 @@ from django.urls import reverse
 from accounts.models import User
 from rest_framework import status
 from rest_framework.test import APITestCase
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class UserRegisterViewTests(APITestCase):
@@ -104,3 +105,53 @@ class AdminUserViewSetTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.regular_user.refresh_from_db()
         self.assertEqual(self.regular_user.username, 'regular_user')
+
+
+class UserLogoutViewTests(APITestCase):
+
+    def setUp(self):
+        self.url = reverse('accounts:user_logout')
+        
+        self.user_a = User.objects.create_user(
+            phone="09987654321",
+            email="user_a@gmail.com",
+            username="testuser_a",
+            password="testpassword"
+        )
+        self.user_b = User.objects.create_user(
+            phone="09123456789",
+            email="user_b@gmail.com",
+            username="testuser_b",
+            password="testpassword"
+        )
+
+    def test_logout_success(self):
+        refresh = RefreshToken.for_user(self.user_a)
+        data = {'refresh': str(refresh)}
+        
+        self.client.force_authenticate(user=self.user_a)
+        response = self.client.post(self.url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_205_RESET_CONTENT)
+        
+        # Verify the token is actually blacklisted
+        # SimpleJWT raises TokenError if I try to refresh a blacklisted token
+        with self.assertRaises(Exception):
+            refresh.check_blacklist()
+
+    def test_logout_with_others_token_forbidden(self):
+        refresh_b = RefreshToken.for_user(self.user_b)
+        data = {'refresh': str(refresh_b)}
+        
+        self.client.force_authenticate(user=self.user_a)
+        response = self.client.post(self.url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.data['detail'], 'Token does not belongs to authentication user')
+
+    def test_logout_invalid_token(self):
+        self.client.force_authenticate(user=self.user_a)
+        data = {'refresh': 'this-is-not-a-valid-token'}
+        
+        response = self.client.post(self.url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    
