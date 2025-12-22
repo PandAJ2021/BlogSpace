@@ -78,13 +78,10 @@ class UserProfileView(UpdateModelMixin, DestroyModelMixin, GenericViewSet):
 
     def get_queryset(self):
         return UserProfile.objects.filter(user=self.request.user)
-    
-    def get_object(self):
-        return get_object_or_404(UserProfile, user=self.request.user)
-    
+        
     @action(detail=False, methods=['get',], url_path='me')
     def me(self, request):
-        profile = self.get_object()
+        profile = get_object_or_404(UserProfile, user=request.user)
         ser_data = self.get_serializer(profile)
         return Response(ser_data.data)
 
