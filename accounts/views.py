@@ -31,6 +31,7 @@ class AdminUserViewSet(ModelViewSet):
 
 
 class UserLogoutView(APIView):
+    permission_classes = [IsAuthenticated,]
 
     def post(self, request):
         try:
