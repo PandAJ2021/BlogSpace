@@ -1,5 +1,5 @@
 from django.urls import reverse
-from accounts.models import User, SocialLink
+from accounts.models import User, SocialLink, UserProfile
 from rest_framework import status
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -198,3 +198,49 @@ class SocialLinkViewSetTests(APITestCase):
         self.client.force_authenticate(user=None)
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class ProfileViewSetTests(APITestCase):
+
+    def setUp(self):
+
+        self.user = User.objects.create_user(
+            username='testuser', 
+            email='testuser@gmail.com', 
+            password='testpassword',
+            phone='09123456789'
+        )
+
+        self.profile = UserProfile.objects.get(user=self.user)
+        self.profile.name = 'Ali'
+        self.profile.surname = 'Jalili'
+        self.profile.save()
+
+        self.list_url = reverse('accounts:profiles-list') 
+        self.detail_url = reverse('accounts:profiles-detail', kwargs={'pk': self.profile.pk})
+    
+    def test_list_profiles(self):
+        response = self.client.get(self.list_url)
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['name'], "Ali")
+
+    def test_retrieve_profile(self):
+        response = self.client.get(self.detail_url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['name'], "Ali")
+    
+    def test_profile_is_read_only(self):
+        post_response = self.client.post(self.list_url, {'name': 'New', 'surname':'New Surname'})
+        self.assertEqual(post_response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        
+        put_response = self.client.put(self.detail_url, {'name': 'Updated'})
+        self.assertEqual(put_response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+    
+    def test_retrieve_non_existent_profile(self):
+        invalid_url = reverse('accounts:profiles-detail', kwargs={'pk': 1000})
+        response = self.client.get(invalid_url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
