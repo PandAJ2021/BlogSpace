@@ -319,7 +319,7 @@ class SendOTPViewTests(APITestCase):
         self.phone = "09123456789"
         
         self.user = User.objects.create_user(
-            username='user', 
+            username='testuser', 
             email='testuser@gmail.com', 
             password='testpassword',
             phone=self.phone
@@ -370,3 +370,57 @@ class SendOTPViewTests(APITestCase):
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['detail'], 'Verification code sent')
+
+
+class OTPLoginViewTests(APITestCase):
+
+    def setUp(self):
+        self.url = reverse('accounts:token_by_otp') 
+        self.phone = "09123456789"
+        self.code = "123456"
+        
+        self.user = User.objects.create_user(
+            username='testuser', 
+            email='testuser@gmail.com', 
+            password='testpassword',
+            phone=self.phone
+        )
+
+        self.otp = OTPCode.objects.create(
+            phone=self.phone,
+            code=self.code
+        )
+
+    def test_otp_login_success(self):
+        data = {
+            "phone": self.phone,
+            "code": self.code
+        }
+        response = self.client.post(self.url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('access', response.data)
+        self.assertIn('refresh', response.data)
+
+    def test_otp_login_wrong_code(self):
+        data = {
+            "phone": self.phone,
+            "code": "654321" # Wrong code
+        }
+        response = self.client.post(self.url, data)
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], 'Invalid code or phone')
+
+    def test_otp_login_user_not_found(self):
+        ghost_phone = "09998887766" #there is no user with this number
+        OTPCode.objects.create(phone=ghost_phone, code="654321")
+
+        data = {
+            "phone": ghost_phone,
+            "code": "654321"
+        }
+        response = self.client.post(self.url, data)
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], 'There is no user with this number')
