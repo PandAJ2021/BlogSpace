@@ -1,5 +1,5 @@
 from django.urls import reverse
-from accounts.models import User, SocialLink, UserProfile
+from accounts.models import User, SocialLink, UserProfile, OTPCode
 from rest_framework import status
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -310,3 +310,63 @@ class UserProfileViewTests(APITestCase):
         response = self.client.patch(other_url, {'name': 'Ali'})
         
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class SendOTPViewTests(APITestCase):
+
+    def setUp(self):
+        self.url = reverse('accounts:send_otp_code') 
+        self.phone = "09123456789"
+        
+        self.user = User.objects.create_user(
+            username='user', 
+            email='testuser@gmail.com', 
+            password='testpassword',
+            phone=self.phone
+        )
+
+    def test_invalid_phone_format(self):
+        data = {'phone': '12345'}
+        response = self.client.post(self.url, data)
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], 'Invalid phone number')
+
+    def test_user_not_found(self):
+        data = {'phone': '09987654321'}
+        response = self.client.post(self.url, data)
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], 'There is no user with this number')
+    
+    def test_send_otp_success(self):
+        data = {'phone': self.phone}
+        response = self.client.post(self.url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['detail'], 'Verification code sent')
+        self.assertTrue(OTPCode.objects.filter(phone=self.phone).exists())
+    
+    def test_otp_throttling(self):
+        OTPCode.objects.create(phone=self.phone, code=111111)
+        
+        data = {'phone': self.phone}
+        response = self.client.post(self.url, data)
+  
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data['detail'], 'Code sent recently, Please wait')
+
+    def test_send_otp_allowed_after_expiration(self):
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        expired_time = timezone.now() - timedelta(minutes=3)
+        otp = OTPCode.objects.create(phone=self.phone, code=123456)
+        
+        OTPCode.objects.filter(pk=otp.pk).update(created_at=expired_time)
+        
+        data = {'phone': self.phone}
+        response = self.client.post(self.url, data)
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['detail'], 'Verification code sent')
